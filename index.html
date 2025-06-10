@@ -192,6 +192,50 @@
             }
         }
 
+        /* Firework styles */
+        .firework {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            z-index: 1000;
+        }
+
+        .firework-trail {
+            position: absolute;
+            width: 2px;
+            height: 80px;
+            background: linear-gradient(to top, transparent, #ffd700);
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: trail-fade 1s ease-out forwards;
+        }
+
+        @keyframes trail-fade {
+            to {
+                opacity: 0;
+            }
+        }
+
+        .spark {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            animation: spark-burst 1.5s ease-out forwards;
+        }
+
+        @keyframes spark-burst {
+            0% {
+                transform: translate(0, 0);
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
         /* Balloon */
         .balloon {
             position: fixed;
@@ -301,6 +345,122 @@
             }
         }
 
+        // Create spectacular fireworks
+        function createFirework(x, y) {
+            // Create the main firework
+            const firework = document.createElement('div');
+            firework.className = 'firework';
+            firework.style.left = x + 'px';
+            firework.style.bottom = '0px';
+            
+            // Add trail effect
+            const trail = document.createElement('div');
+            trail.className = 'firework-trail';
+            firework.appendChild(trail);
+            
+            document.body.appendChild(firework);
+            
+            // Animate firework going up
+            let currentBottom = 0;
+            const targetHeight = y;
+            const animationId = setInterval(() => {
+                currentBottom += 10;
+                firework.style.bottom = currentBottom + 'px';
+                
+                if (currentBottom >= window.innerHeight - targetHeight) {
+                    clearInterval(animationId);
+                    explodeFirework(x, targetHeight);
+                    firework.remove();
+                }
+            }, 10);
+        }
+
+        // Create explosion effect
+        function explodeFirework(x, y) {
+            const colors = ['#ff0066', '#ffcc00', '#00ff99', '#0099ff', '#ff3366', '#66ff33', '#ff9933', '#cc00ff'];
+            const sparkCount = 30;
+            
+            // Create explosion sound effect (visual)
+            const flash = document.createElement('div');
+            flash.style.cssText = `
+                position: fixed;
+                left: ${x}px;
+                top: ${y}px;
+                width: 100px;
+                height: 100px;
+                background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                animation: flash 0.3s ease-out forwards;
+                z-index: 999;
+            `;
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 300);
+            
+            // Create sparks
+            for (let i = 0; i < sparkCount; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'spark';
+                spark.style.left = x + 'px';
+                spark.style.top = y + 'px';
+                
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                spark.style.backgroundColor = color;
+                spark.style.boxShadow = `0 0 6px ${color}`;
+                
+                const angle = (i / sparkCount) * Math.PI * 2;
+                const velocity = 80 + Math.random() * 40;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+                
+                spark.style.setProperty('--vx', vx + 'px');
+                spark.style.setProperty('--vy', vy + 'px');
+                
+                document.body.appendChild(spark);
+                
+                // Animate spark
+                let posX = 0;
+                let posY = 0;
+                let velocityY = vy;
+                const gravity = 2;
+                
+                const sparkAnimation = setInterval(() => {
+                    posX += vx / 60;
+                    velocityY += gravity;
+                    posY += velocityY / 60;
+                    
+                    spark.style.transform = `translate(${posX}px, ${posY}px)`;
+                    
+                    if (posY > window.innerHeight) {
+                        clearInterval(sparkAnimation);
+                        spark.remove();
+                    }
+                }, 16);
+                
+                setTimeout(() => {
+                    clearInterval(sparkAnimation);
+                    spark.remove();
+                }, 1500);
+            }
+        }
+
+        // Create multiple fireworks display
+        function createFireworksShow() {
+            let count = 0;
+            const launchFirework = () => {
+                const x = Math.random() * window.innerWidth;
+                const y = 100 + Math.random() * 200;
+                createFirework(x, y);
+                
+                count++;
+                if (count < 8) {
+                    setTimeout(launchFirework, 300 + Math.random() * 700);
+                }
+            };
+            
+            launchFirework();
+        }
+
         // Create balloons
         function createBalloons() {
             const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#f0932b', '#eb4d4b', '#6ab04c'];
@@ -335,16 +495,21 @@
 
         // Celebration function
         function celebrate() {
-            createConfetti();
-            createBalloons();
-            createEmojiRain();
+            // Create spectacular fireworks show
+            createFireworksShow();
+            
+            // Also create some balloons and emoji rain for extra effect
+            setTimeout(() => {
+                createBalloons();
+                createEmojiRain();
+            }, 1000);
             
             // Play a birthday message
             const messages = [
-                "🎉 Make a wish, Alina! 🎉",
-                "🌟 You're amazing! 🌟",
-                "💝 Hope all your dreams come true! 💝",
-                "🎂 Enjoy your special day! 🎂"
+                "🎆 Spectacular Birthday, Alina! 🎆",
+                "✨ You light up the world! ✨",
+                "🌟 Make your wishes come true! 🌟",
+                "🎇 Shine bright like fireworks! 🎇"
             ];
             
             const randomMessage = messages[Math.floor(Math.random() * messages.length)];
@@ -353,19 +518,20 @@
             const floatingMsg = document.createElement('div');
             floatingMsg.style.cssText = `
                 position: fixed;
-                top: 50%;
+                top: 20%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                font-size: 2rem;
+                font-size: 3rem;
                 color: white;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-                z-index: 1000;
-                animation: fadeInOut 3s ease-in-out;
+                text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+                z-index: 1001;
+                animation: fadeInOut 4s ease-in-out;
+                font-weight: bold;
             `;
             floatingMsg.textContent = randomMessage;
             document.body.appendChild(floatingMsg);
             
-            setTimeout(() => floatingMsg.remove(), 3000);
+            setTimeout(() => floatingMsg.remove(), 4000);
         }
 
         // Add fadeInOut animation
@@ -375,6 +541,10 @@
                 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
                 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
                 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            }
+            @keyframes flash {
+                0% { transform: translate(-50%, -50%) scale(0.1); opacity: 1; }
+                100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
             }
         `;
         document.head.appendChild(style);
